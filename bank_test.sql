@@ -58,10 +58,7 @@ INSERT INTO Customer (full_name, address, bank_id) VALUES
 ('Ihor Moskalenko', 'Kyiv, Krajny str', 3),
 ('Dima Vovchenko', 'Tarny, Pobedy str', 4),
 ('Sima Shlomov', 'Berdichev', 1),
-('Vasil Popaduk', 'Berezan', 4)
-;
-
-INSERT INTO Customer (full_name, address, bank_id) VALUES 
+('Vasil Popaduk', 'Berezan', 4),
 ('Petro Ivanko', 'Dnipro, Vokzalna str', 1),
 ('Simon Petlura', 'Lviv, Centralna str', 1),
 ('Simon Petlura', 'Lviv, Centralna str', 4)
@@ -145,27 +142,51 @@ SELECT COUNT(name) FROM Bank ;
 SELECT DISTINCT COUNT(full_name) FROM Customer 
 WHERE Customer.bank_id IN (SELECT Bank.bank_id FROM Bank WHERE name='Privat');
 
+-- Количество клиентов банка А - через JOIN
+SELECT count(full_name) FROM Customer JOIN Bank ON Customer.bank_id = Bank.bank_id
+WHERE Bank.name = 'Privat';
+
 -- список клиентов банка А
 SELECT full_name FROM Customer 
 WHERE Customer.bank_id IN (SELECT Bank.bank_id FROM Bank WHERE name='Privat') ORDER BY full_name;
+
+-- список клиентов банка А через JOIN
+SELECT full_name FROM Customer JOIN Bank ON Customer.bank_id = Bank.bank_id
+WHERE Bank.name = 'Privat' ORDER BY full_name;
 
 -- список банков John-а
 SELECT DISTINCT name FROM Bank 
 WHERE Bank.bank_id IN (SELECT Customer.bank_id FROM Customer WHERE full_name='Simon Petlura');
 
+-- список банков John-а через JOIN
+SELECT DISTINCT name FROM Bank JOIN Customer ON Bank.bank_id = Customer.bank_id 
+WHERE Customer.full_name = 'Simon Petlura';
+
 -- список всех операций банка А
 SELECT Amount.bank_id AS 'Банк', Amount.operation_id AS 'Тип операции', amount AS 'Сумма' FROM Amount 
 WHERE bank_id=(SELECT bank_id FROM Bank WHERE name='Delta'); 
 
--- список опреаций по выдаче (CREdit) денег банком А
+-- список операций по выдаче (CREdit) денег банком А
 SELECT Amount.bank_id AS 'Банк', Amount.operation_id AS 'Тип операции', amount AS 'Сумма' FROM Amount 
 WHERE bank_id=(SELECT bank_id FROM Bank WHERE name='Delta') 
   AND operation_id=(SELECT operation_id FROM Operation WHERE op_type='cre'); 
+
+-- список операций по выдаче (CREdit) денег банком А  - JOIN
+SELECT Amount.bank_id AS 'Банк', Amount.operation_id AS 'Тип операции', amount AS 'Сумма' FROM Amount 
+JOIN Bank ON Amount.bank_id = Bank.bank_id 
+JOIN Operation ON Amount.operation_id = Operation.operation_id
+WHERE Bank.name ='Delta' AND Operation.op_type = 'cre'; 
 
 -- сумма выданных денег банком А
 SELECT SUM(amount) AS 'Выдано банком' FROM Amount 
 WHERE bank_id=(SELECT bank_id FROM Bank WHERE name='Delta') AND
 operation_id=(SELECT operation_id FROM Operation WHERE op_type='cre'); 
+
+-- сумма выданных денег банком А - JOIN
+SELECT SUM(amount) AS 'Выдано банком' FROM Amount AS am
+JOIN Bank ON am.bank_id = Bank.bank_id  
+JOIN Operation AS op ON am.operation_id = op.operation_id 
+WHERE Bank.name='Delta' AND op.op_type='cre'; 
 
 -- список операций за конкретную дату (банк, клиент, сумма, дата) с id
 SELECT bank_id AS 'Банк', customer_id AS 'Клиент', amount AS 'Сумма', operation_id AS 'ops'  
@@ -177,9 +198,20 @@ SELECT Bank.name AS 'Банк', Customer.full_name AS 'Клиент', Amount.amo
 FROM Bank, Customer, Amount, Operation, Date   
 WHERE Bank.bank_id = Amount.bank_id AND Customer.customer_id = Amount.customer_id 
 AND Amount.operation_id = Operation.operation_id AND Amount.action_id = date.action_id 
--- AND Date.date=TO_DAYS(now()) 
 AND Date.date='2017-03-21' 
+-- AND Date.date=TO_DAYS(now()) 
 ;
 
+-- список операций за конкретную дату (банк, клиент, сумма, дата) с Названиями - JOIN
+SELECT Bank.name AS 'Банк', Customer.full_name AS 'Клиент', am.amount AS 'Сумма', Operation.op_type AS 'Операция', Date.date AS 'Дата операции'
+FROM Amount AS am
+JOIN Bank ON am.bank_id = Bank.bank_id 
+JOIN Customer ON am.customer_id = Customer.customer_id
+JOIN Operation ON am.operation_id = Operation.operation_id
+JOIN Date ON am.action_id = Date.action_id
+-- WHERE Date.date = '2017-03-21'
+WHERE Date.date = '2017-04-04'
+-- AND Date.date=TO_DAYS(now()) 
+;
 
 
